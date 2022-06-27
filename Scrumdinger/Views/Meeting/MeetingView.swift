@@ -12,6 +12,7 @@ struct MeetingView: View {
     @Binding var scrum: DailyScrum
     @StateObject var scrumTimer = ScrumTimer()
     
+    
     private var player: AVPlayer {
         try? AVAudioSession.sharedInstance().setCategory(.playback)
         return AVPlayer.sharedDingPlayer
@@ -40,6 +41,8 @@ struct MeetingView: View {
         }
         .onDisappear {
             scrumTimer.stopScrum()
+            let newHistory = History(attendees: scrum.attendees, lengthInMinutes: scrum.timer.secondsElapsed/60)
+            scrum.history.insert(newHistory, at: 0)
         }
         .navigationBarTitleDisplayMode(.inline)
     }
