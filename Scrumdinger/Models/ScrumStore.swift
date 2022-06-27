@@ -19,6 +19,20 @@ class ScrumStore: ObservableObject {
             .appendingPathComponent("scrums.data")
     }
     
+    static func load() async throws -> [DailyScrum] {
+        /// Calling withCheckedThrowingContinuation suspends the load function, then passes a continuation into a closure that you provide. A continuation is a value that represents the code after an awaited function.
+        try await withCheckedContinuation { continuation in
+            load { result in
+                switch result {
+                case .failure(let error):
+                    continuation.resume(throwing: error as! Never)
+                case .success(let scrums):
+                    continuation.resume(returning: scrums)
+                }
+            }
+        }
+    }
+    
     ///Result is a single type that represents the outcome of an operation, whether it’s a success or failure. The load function accepts a completion closure that it calls asynchronously with either an array of scrums or an error.
     static func load(completion: @escaping (Result<[DailyScrum], Error>)->Void) {
         // Dispatch queues are first in, first out (FIFO) queues to which your application can submit tasks. Background tasks have the lowest priority of all tasks.
@@ -39,6 +53,21 @@ class ScrumStore: ObservableObject {
             } catch {
                 DispatchQueue.main.async {
                     completion(.failure(error))
+                }
+            }
+        }
+    }
+    
+    /// The save function returns a value that callers of the function may not use. The @discardableResult attribute disables warnings about the unused return value.
+    @discardableResult
+    static func save(scrums: [DailyScrum]) async throws -> Int {
+        try await withCheckedContinuation { continuation in
+            save(scrums: scrums) { result in
+                switch result {
+                case .failure(let error):
+                    continuation.resume(throwing: error as! Never)
+                case .success(let scrumsSaved):
+                    continuation.resume(returning: scrumsSaved)
                 }
             }
         }

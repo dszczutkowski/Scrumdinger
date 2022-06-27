@@ -16,21 +16,21 @@ struct ScrumdingerApp: App {
         WindowGroup {
             NavigationView {
                 ScrumsView(scrums: $store.scrums) {
-                    ScrumStore.save(scrums: store.scrums) { result in
-                        if case .failure(let error) = result {
-                            fatalError(error.localizedDescription)
+                    Task {
+                        do {
+                            try await ScrumStore.save(scrums: store.scrums)
+                        } catch {
+                            fatalError("Error saving scrums!")
                         }
                     }
                 }
             }
-            .onAppear {
-                ScrumStore.load { result in
-                    switch result {
-                    case .failure(let error):
-                        fatalError(error.localizedDescription)
-                    case .success(let scrums):
-                        store.scrums = scrums
-                    }
+            .task {
+                do {
+                    /// scrums is assigned a new value when the awaited function completes. Because scrums is a published property, any view observing ScrumStore refreshes when the property updates.
+                    store.scrums = try await ScrumStore.load()
+                } catch {
+                    fatalError("Error loading scrums!")
                 }
             }
         }
